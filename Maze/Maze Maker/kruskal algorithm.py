@@ -76,53 +76,32 @@ class Maze:
         pygame.display.flip()
 
     def generate_maze(self):
-        walls = []
-        remaining_walls = set()
         dset = DisjointSet(self.rows * self.cols)
-
-        for y in range(self.rows):
-            for x in range(self.cols):
-                if y < self.rows - 1:
-                    walls.append((x, y, S))
-                if x < self.cols - 1:
-                    walls.append((x, y, E))
-
+        walls = [(x, y, S) for y in range(self.rows) for x in range(self.cols) if y < self.rows - 1] + [(x, y, E) for y in range(self.rows) for x in range(self.cols) if x < self.cols - 1]
         random.shuffle(walls)
-        remaining_walls.update(walls)
+        remaining_walls = set(walls)
 
         while walls:
             self.draw_maze(remaining_walls)
             pygame.time.delay(50)
 
             x, y, direction = walls.pop()
-            cell1 = y * self.cols + x
-            if direction == S:
-                cell2 = (y + 1) * self.cols + x
-            else:
-                cell2 = y * self.cols + (x + 1)
+            nx, ny = x + DX[direction], y + DY[direction]
 
-            if dset.find(cell1) != dset.find(cell2):
-                dset.union(cell1, cell2)
+            if dset.find(y * self.cols + x) != dset.find(ny * self.cols + nx):
+                dset.union(y * self.cols + x, ny * self.cols + nx)
                 self.grid[y][x] |= direction
-                if direction == S:
-                    self.grid[y + 1][x] |= N
-                else:
-                    self.grid[y][x + 1] |= W
+                self.grid[ny][nx] |= OPPOSITE[direction]
                 self.grid[y][x] |= IN
-                if direction == S:
-                    self.grid[y + 1][x] |= IN
-                else:
-                    self.grid[y][x + 1] |= IN
+                self.grid[ny][nx] |= IN
                 remaining_walls.remove((x, y, direction))
 
         self.draw_maze(remaining_walls)
         self.save_maze("kruskal_maze_data.pkl")
 
     def save_maze(self, filename):
-        grid_data = [[(self.grid[y][x] & S != 0, self.grid[y][x] & E != 0, True) for x in range(self.cols)] for y in range(self.rows)]
-        with open(filename, 'wb') as f:
-            pickle.dump(grid_data, f)
-
+        with open(filename, "wb") as f:
+            pickle.dump(self.grid, f)
 
 class MazeGame:
     def __init__(self):
