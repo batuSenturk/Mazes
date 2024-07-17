@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import pickle
 
 # Constants for the display
 WIDTH, HEIGHT = 800, 800
@@ -57,13 +58,18 @@ class Maze:
                 continue
 
             visits = {(cx, cy): 0}
-
             start_x, start_y = cx, cy
             walking = True
             path = []
 
             while walking:
-                path.append((cx, cy))
+                if (cx, cy) in path:
+                    # Loop detected, remove the looped section
+                    loop_start_index = path.index((cx, cy))
+                    path = path[:loop_start_index + 1]
+                else:
+                    path.append((cx, cy))
+
                 self.draw_maze(cx, cy, path)
                 time.sleep(0.02)
 
@@ -109,6 +115,12 @@ class Maze:
                 time.sleep(0.02)
 
         self.draw_maze()
+        self.save_maze("wilson_maze_data.pkl")
+    
+    # Save the maze data to a file
+    def save_maze(self, filename):
+        with open(filename, "wb") as f:
+            pickle.dump(self.grid, f)
 
 class MazeGame:
     def __init__(self):
